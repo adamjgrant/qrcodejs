@@ -242,7 +242,7 @@ var QRCode;
 				aHTML.push('<tr>');
 				
 				for (var col = 0; col < nCount; col++) {
-					aHTML.push('<td style="border-radius:50%;border:0;border-collapse:collapse;padding:0;margin:0;width:' + nWidth + 'px;height:' + nHeight + 'px;background-color:' + (oQRCode.isDark(row, col) ? _htOption.colorDark : _htOption.colorLight) + ';"></td>');
+					aHTML.push('<td style="border-radius:50%;border:0;border-collapse:collapse;padding:0;margin:0;width:' + nWidth + 'px;height:' + nHeight + 'px;background-color:' + (oQRCode.isDark(row, col) ? _htOption.colorTest : _htOption.colorLight) + ';"></td>');
 				}
 				
 				aHTML.push('</tr>');
@@ -383,30 +383,37 @@ var QRCode;
 			_elImage.style.display = "none";
 			this.clear();
 			
+      // Roundy stuff happens here.
 			for (var row = 0; row < nCount; row++) {
 				for (var col = 0; col < nCount; col++) {
 					var bIsDark = oQRCode.isDark(row, col);
 					var nLeft = col * nWidth;
 					var nTop = row * nHeight;
+          var radius = nWidth;
+          var radius_factor = 0.5;
+
 					_oContext.strokeStyle = bIsDark ? _htOption.colorDark : _htOption.colorLight;
-					_oContext.lineWidth = 1;
 					_oContext.fillStyle = bIsDark ? _htOption.colorDark : _htOption.colorLight;					
-					_oContext.fillRect(nLeft, nTop, nWidth, nHeight);
-					
-					// 안티 앨리어싱 방지 처리
+          _oContext.lineJoin = "round";
+					_oContext.lineWidth = radius;
+					// _oContext.fillRect(nLeft, nTop, nWidth, nHeight);
+          
 					_oContext.strokeRect(
-						Math.floor(nLeft) + 0.5,
-						Math.floor(nTop) + 0.5,
-						nRoundedWidth,
-						nRoundedHeight
+						Math.floor(nLeft) + radius * radius_factor,
+						Math.floor(nTop) + radius * radius_factor,
+						nRoundedWidth - radius,
+						nRoundedHeight - radius
 					);
-					
-					_oContext.strokeRect(
-						Math.ceil(nLeft) - 0.5,
-						Math.ceil(nTop) - 0.5,
-						nRoundedWidth,
-						nRoundedHeight
+
+					_oContext.fillRect(
+						Math.ceil(nLeft) + radius * radius_factor,
+						Math.ceil(nTop) + radius * radius_factor,
+						nRoundedWidth - radius,
+						nRoundedHeight - radius
 					);
+
+          _oContext.stroke();
+          _oContext.fill();
 				}
 			}
 			
@@ -535,6 +542,7 @@ var QRCode;
 			typeNumber : 4,
 			colorDark : "#000000",
 			colorLight : "#ffffff",
+      colorTest: "red",
 			correctLevel : QRErrorCorrectLevel.H
 		};
 		
