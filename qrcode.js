@@ -30,10 +30,10 @@ var QRCode;
 		this.mode = QRMode.MODE_8BIT_BYTE;
 		this.data = data;
 		this.parsedData = [];
+		var byteArray = [];
 
 		// Added to support UTF-8 Characters
 		for (var i = 0, l = this.data.length; i < l; i++) {
-			var byteArray = [];
 			var code = this.data.charCodeAt(i);
 
 			if (code > 0x10000) {
@@ -52,10 +52,8 @@ var QRCode;
 				byteArray[0] = code;
 			}
 
-			this.parsedData.push(byteArray);
+			this.parsedData = this.parsedData.concat(byteArray);
 		}
-
-		this.parsedData = Array.prototype.concat.apply([], this.parsedData);
 
 		if (this.parsedData.length != this.data.length) {
 			this.parsedData.unshift(191);
@@ -162,7 +160,7 @@ var QRCode;
 		
 		if (/android/i.test(sAgent)) { // android
 			android = true;
-			var aMat = sAgent.toString().match(/android ([0-9]\.[0-9])/i);
+			aMat = sAgent.toString().match(/android ([0-9]\.[0-9])/i);
 			
 			if (aMat && aMat[1]) {
 				android = parseFloat(aMat[1]);
@@ -199,13 +197,12 @@ var QRCode;
 			svg.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
 			_el.appendChild(svg);
 
-			svg.appendChild(makeSVG("rect", {"fill": _htOption.colorLight, "width": "100%", "height": "100%"}));
 			svg.appendChild(makeSVG("circle", {"fill": _htOption.colorDark, "width": "1", "height": "1", "id": "template"}));
 
 			for (var row = 0; row < nCount; row++) {
 				for (var col = 0; col < nCount; col++) {
 					if (oQRCode.isDark(row, col)) {
-						var child = makeSVG("use", {"x": String(col), "y": String(row)});
+						var child = makeSVG("use", {"x": String(row), "y": String(col)});
 						child.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#template")
 						svg.appendChild(child);
 					}
@@ -245,7 +242,7 @@ var QRCode;
 				aHTML.push('<tr>');
 				
 				for (var col = 0; col < nCount; col++) {
-					aHTML.push('<td style="border:0;border-collapse:collapse;padding:0;margin:0;width:' + nWidth + 'px;height:' + nHeight + 'px;background-color:' + (oQRCode.isDark(row, col) ? _htOption.colorDark : _htOption.colorLight) + ';"></td>');
+					aHTML.push('<td style="border-radius:50%;border:0;border-collapse:collapse;padding:0;margin:0;width:' + nWidth + 'px;height:' + nHeight + 'px;background-color:' + (oQRCode.isDark(row, col) ? _htOption.colorTest : _htOption.colorLight) + ';"></td>');
 				}
 				
 				aHTML.push('</tr>');
@@ -319,7 +316,7 @@ var QRCode;
                     self._bSupportDataURI = false;
 
                     if (self._fFail) {
-                        self._fFail.call(self);
+                        _fFail.call(self);
                     }
                 };
                 var fOnSuccess = function() {
@@ -362,7 +359,6 @@ var QRCode;
 			this._oContext = this._elCanvas.getContext("2d");
 			this._bIsPainted = false;
 			this._elImage = document.createElement("img");
-			this._elImage.alt = "Scan me!";
 			this._elImage.style.display = "none";
 			this._el.appendChild(this._elImage);
 			this._bSupportDataURI = null;
@@ -387,30 +383,37 @@ var QRCode;
 			_elImage.style.display = "none";
 			this.clear();
 			
+      // Roundy stuff happens here.
 			for (var row = 0; row < nCount; row++) {
 				for (var col = 0; col < nCount; col++) {
 					var bIsDark = oQRCode.isDark(row, col);
 					var nLeft = col * nWidth;
 					var nTop = row * nHeight;
+          var radius = nWidth;
+          var radius_factor = 0.5;
+
 					_oContext.strokeStyle = bIsDark ? _htOption.colorDark : _htOption.colorLight;
-					_oContext.lineWidth = 1;
 					_oContext.fillStyle = bIsDark ? _htOption.colorDark : _htOption.colorLight;					
-					_oContext.fillRect(nLeft, nTop, nWidth, nHeight);
-					
-					// 안티 앨리어싱 방지 처리
+          _oContext.lineJoin = "round";
+					_oContext.lineWidth = radius;
+					// _oContext.fillRect(nLeft, nTop, nWidth, nHeight);
+          
 					_oContext.strokeRect(
-						Math.floor(nLeft) + 0.5,
-						Math.floor(nTop) + 0.5,
-						nRoundedWidth,
-						nRoundedHeight
+						Math.floor(nLeft) + radius * radius_factor,
+						Math.floor(nTop) + radius * radius_factor,
+						nRoundedWidth - radius,
+						nRoundedHeight - radius
 					);
-					
-					_oContext.strokeRect(
-						Math.ceil(nLeft) - 0.5,
-						Math.ceil(nTop) - 0.5,
-						nRoundedWidth,
-						nRoundedHeight
+
+					_oContext.fillRect(
+						Math.ceil(nLeft) + radius * radius_factor,
+						Math.ceil(nTop) + radius * radius_factor,
+						nRoundedWidth - radius,
+						nRoundedHeight - radius
 					);
+
+          _oContext.stroke();
+          _oContext.fill();
 				}
 			}
 			
@@ -539,6 +542,7 @@ var QRCode;
 			typeNumber : 4,
 			colorDark : "#000000",
 			colorLight : "#ffffff",
+      colorTest: "red",
 			correctLevel : QRErrorCorrectLevel.H
 		};
 		
@@ -557,10 +561,6 @@ var QRCode;
 		
 		if (typeof el == "string") {
 			el = document.getElementById(el);
-		}
-
-		if (this._htOption.useSVG) {
-			Drawing = svgDrawer;
 		}
 		
 		this._android = _getAndroid();
